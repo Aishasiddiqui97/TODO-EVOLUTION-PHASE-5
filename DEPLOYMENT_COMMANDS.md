@@ -23,9 +23,9 @@ dapr init -k --wait
 # 3. Create namespace
 kubectl create namespace todo-chatbot-local
 
-# 4. Create OpenAI API key secret (REQUIRED)
+# 4. Create OpenRouter API key secret (REQUIRED)
 kubectl create secret generic app-secrets \
-  --from-literal=openai-api-key="YOUR_OPENAI_API_KEY" \
+  --from-literal=openrouter-api-key="YOUR_OPENROUTER_API_KEY" \
   -n todo-chatbot-local
 
 # 5. Build Docker images

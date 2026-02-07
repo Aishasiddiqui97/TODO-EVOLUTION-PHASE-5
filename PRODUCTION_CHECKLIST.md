@@ -23,11 +23,11 @@
 - [x] Deployment scripts created
 
 ### Secrets Configuration
-- [ ] OpenAI API key obtained
-- [ ] Create Kubernetes secret for OpenAI API key:
+- [ ] OpenRouter API key obtained from https://openrouter.ai/keys
+- [ ] Create Kubernetes secret for OpenRouter API key:
   ```bash
   kubectl create secret generic app-secrets \
-    --from-literal=openai-api-key="YOUR_OPENAI_API_KEY" \
+    --from-literal=openrouter-api-key="YOUR_OPENROUTER_API_KEY" \
     -n todo-chatbot-local
   ```
 - [ ] SMTP credentials configured (if using email notifications)

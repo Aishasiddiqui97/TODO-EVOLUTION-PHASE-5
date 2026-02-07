@@ -1,7 +1,8 @@
 """
-OpenAI Agents SDK integration for natural language task management.
+OpenRouter API integration for natural language task management.
 
 Handles AI agent initialization, message processing, and tool execution.
+Uses OpenRouter for access to multiple LLM models through OpenAI-compatible API.
 """
 
 import logging
@@ -13,21 +14,23 @@ logger = logging.getLogger(__name__)
 
 
 class AIAgent:
-    """AI agent for natural language task management using OpenAI."""
+    """AI agent for natural language task management using OpenRouter."""
 
     def __init__(self, api_key: Optional[str] = None):
         """
         Initialize AI agent.
 
         Args:
-            api_key: OpenAI API key (defaults to env var)
+            api_key: OpenRouter API key (defaults to env var)
         """
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
         if not self.api_key:
-            raise ValueError("OpenAI API key not provided")
+            raise ValueError("OpenRouter API key not provided")
 
+        # Configure OpenAI client to use OpenRouter
         openai.api_key = self.api_key
-        self.model = "gpt-4-turbo-preview"
+        openai.api_base = "https://openrouter.ai/api/v1"
+        self.model = os.getenv("OPENROUTER_MODEL", "openai/gpt-4-turbo-preview")
 
         # System prompt for task management
         self.system_prompt = """You are a helpful task management assistant.
@@ -104,7 +107,7 @@ Be conversational and helpful. Confirm actions after completing them.
         tools: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """
-        Call OpenAI API with function calling.
+        Call OpenRouter API with function calling.
 
         Args:
             messages: Conversation messages
@@ -117,7 +120,7 @@ Be conversational and helpful. Confirm actions after completing them.
             # Convert MCP tools to OpenAI function format
             functions = self._convert_tools_to_functions(tools)
 
-            # Call OpenAI
+            # Call OpenRouter (OpenAI-compatible API)
             response = openai.ChatCompletion.create(
                 model=self.model,
                 messages=messages,
@@ -147,7 +150,7 @@ Be conversational and helpful. Confirm actions after completing them.
             return result
 
         except Exception as e:
-            logger.error(f"Error calling OpenAI: {e}", exc_info=True)
+            logger.error(f"Error calling OpenRouter: {e}", exc_info=True)
             raise
 
     def _convert_tools_to_functions(

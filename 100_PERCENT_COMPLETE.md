@@ -197,7 +197,8 @@ The Event-Driven Todo Chatbot is now **100% complete** with all 139 tasks implem
 ### Environment Variables
 - `PORT=8001`
 - `DAPR_HTTP_PORT=3500`
-- `OPENAI_API_KEY` (from secrets)
+- `OPENROUTER_API_KEY` (from secrets or environment)
+- `OPENROUTER_MODEL=openai/gpt-4-turbo-preview` (optional)
 - `ENVIRONMENT=local`
 - `LOG_LEVEL=info`
 
@@ -381,7 +382,7 @@ curl -X POST http://localhost:8001/api/v1/tasks/search \
 ## Known Limitations
 
 ### Development Environment
-1. **OpenAI API Key Required** - Set `OPENAI_API_KEY` environment variable
+1. **OpenRouter API Key Required** - Set `OPENROUTER_API_KEY` environment variable
 2. **In-Memory State** - Redis used for development (use managed services in production)
 3. **Email Testing** - MailHog for local testing (configure SMTP for production)
 

@@ -1,0 +1,98 @@
+================================================================================
+WEBSOCKET BACKEND - RUN COMMANDS
+================================================================================
+
+METHOD 1: BATCH FILE (EASIEST)
+-------------------------------
+start-websocket-fixed.bat
+
+
+METHOD 2: MANUAL COMMAND
+-------------------------
+cd backend\src
+python -m uvicorn services.websocket_sync.main:app --host 0.0.0.0 --port 8004 --reload
+
+
+METHOD 3: POWERSHELL
+--------------------
+.\start-websocket.ps1
+
+
+================================================================================
+VERIFICATION COMMANDS
+================================================================================
+
+Check if service is running:
+curl http://localhost:8004
+
+Check service stats:
+curl http://localhost:8004/stats
+
+Check what's using port 8004:
+netstat -ano | findstr :8004
+
+
+================================================================================
+FULL APPLICATION STARTUP
+================================================================================
+
+Terminal 1 - Chat API:
+cd backend\src\services\chat_api
+python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+
+Terminal 2 - WebSocket Service:
+cd backend\src
+python -m uvicorn services.websocket_sync.main:app --host 0.0.0.0 --port 8004 --reload
+
+Terminal 3 - Frontend:
+cd frontend
+npm run dev
+
+
+OR USE THE ALL-IN-ONE SCRIPT:
+START.bat
+
+
+================================================================================
+EXPECTED OUTPUT
+================================================================================
+
+INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
+INFO:     Started reloader process
+INFO:     Started server process
+INFO:     Waiting for application startup.
+INFO:     Starting WebSocket Sync Service...
+INFO:     WebSocket Sync Service started successfully
+INFO:     Application startup complete.
+
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+If "ModuleNotFoundError":
+cd backend\src\services\websocket_sync
+pip install -r requirements.txt
+
+If "Address already in use":
+netstat -ano | findstr :8004
+taskkill /PID <PID> /F
+
+If service won't start:
+Check you're in the right directory (backend\src)
+Check Python is installed: python --version
+Check dependencies: pip list | findstr fastapi
+
+
+================================================================================
+QUICK TEST
+================================================================================
+
+After starting the service, open in browser:
+http://localhost:8004
+
+Should show:
+{"service": "websocket-sync", "version": "1.0.0", "status": "running"}
+
+
+================================================================================

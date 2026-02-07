@@ -8,9 +8,9 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 
-from ...shared.dapr_client.client import DaprClientWrapper
-from ...shared.events.publisher import EventPublisher
-from ...shared.models.preferences import UserPreferences
+from src.shared.dapr_client.client import DaprClientWrapper
+from src.shared.events.publisher import EventPublisher
+from src.shared.models.preferences import UserPreferences
 
 logger = logging.getLogger(__name__)
 

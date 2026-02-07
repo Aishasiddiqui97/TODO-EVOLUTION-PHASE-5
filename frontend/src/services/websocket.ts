@@ -50,9 +50,16 @@ export class WebSocketClient {
 
   private getDefaultWsUrl(): string {
     // Determine WebSocket URL based on environment
+    // Next.js uses NEXT_PUBLIC_ prefix for client-side env vars
+    const envUrl = process.env.NEXT_PUBLIC_WS_URL;
+    if (envUrl) {
+      return envUrl;
+    }
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.hostname;
-    const port = process.env.REACT_APP_WS_PORT || '8004';
+    // Fallback to 8004 if not specified
+    const port = process.env.NEXT_PUBLIC_WS_PORT || '8004';
     return `${protocol}//${host}:${port}/ws`;
   }
 
@@ -67,7 +74,7 @@ export class WebSocketClient {
 
     try {
       const url = `${this.wsUrl}?userId=${encodeURIComponent(this.userId)}&lastSequence=${this.lastSequence}`;
-      console.log(`Connecting to WebSocket: ${url}`);
+      console.log(`[WebSocket] Attempting to connect to: ${url}`);
 
       this.ws = new WebSocket(url);
 
@@ -77,7 +84,8 @@ export class WebSocketClient {
       this.ws.onclose = this.handleClose.bind(this);
 
     } catch (error) {
-      console.error('Error creating WebSocket connection:', error);
+      console.error('[WebSocket] Error creating connection:', error);
+      console.warn('[WebSocket] Make sure the WebSocket service is running. Run: start-websocket-fixed.bat');
       this.scheduleReconnect();
     }
   }
@@ -239,15 +247,42 @@ export class WebSocketClient {
   }
 
   private handleError(event: Event): void {
-    console.error('WebSocket error:', event);
+    const wsState = this.ws ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][this.ws.readyState] : 'NULL';
+    
+    // Only log detailed errors in development, and make them more informative
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('WebSocket connection error:', {
+        url: this.wsUrl,
+        readyState: wsState,
+        message: 'Unable to connect to WebSocket server. Make sure the WebSocket service is running on port 8004.',
+        hint: 'Run: start-websocket-fixed.bat'
+      });
+    }
+    
     this.updateConnectionStatus({
       connected: false,
-      error: 'Connection error'
+      error: 'Connection error - WebSocket service may not be running'
     });
   }
 
   private handleClose(event: CloseEvent): void {
-    console.log(`WebSocket closed: code=${event.code}, reason=${event.reason}`);
+    const closeReasons: Record<number, string> = {
+      1000: 'Normal closure',
+      1001: 'Going away',
+      1006: 'Connection lost (service may not be running)',
+      1011: 'Server error',
+      1012: 'Service restart',
+      1013: 'Try again later',
+      1014: 'Bad gateway',
+      1015: 'TLS handshake failed'
+    };
+
+    const reason = closeReasons[event.code] || event.reason || 'Unknown reason';
+    console.log(`[WebSocket] Connection closed: ${reason} (code: ${event.code})`);
+
+    if (event.code === 1006) {
+      console.warn('[WebSocket] 💡 Tip: The WebSocket service may not be running. Run: start-websocket-fixed.bat');
+    }
 
     this.updateConnectionStatus({ connected: false });
 
@@ -263,11 +298,13 @@ export class WebSocketClient {
 
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached');
+      console.error('[WebSocket] Max reconnection attempts reached');
+      console.warn('[WebSocket] 🔴 WebSocket service is not responding.');
+      console.warn('[WebSocket] 💡 Solution: Run "start-websocket-fixed.bat" to start the WebSocket service');
       this.updateConnectionStatus({
         connected: false,
         reconnecting: false,
-        error: 'Max reconnection attempts reached'
+        error: 'Max reconnection attempts reached - WebSocket service not running'
       });
       return;
     }
@@ -275,7 +312,7 @@ export class WebSocketClient {
     this.reconnectAttempts++;
     this.updateConnectionStatus({ reconnecting: true });
 
-    console.log(`Scheduling reconnect attempt ${this.reconnectAttempts} in ${this.reconnectDelay}ms`);
+    console.log(`[WebSocket] Scheduling reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${this.reconnectDelay}ms`);
 
     this.reconnectTimer = setTimeout(() => {
       this.connect();

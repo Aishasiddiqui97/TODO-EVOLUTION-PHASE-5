@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 # Environment variables
 DAPR_HTTP_PORT = os.getenv("DAPR_HTTP_PORT", "3500")
 DAPR_GRPC_PORT = os.getenv("DAPR_GRPC_PORT", "50001")
-APP_PORT = int(os.getenv("APP_PORT", "8000"))
+APP_PORT = int(os.getenv("APP_PORT", "8001"))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
@@ -133,10 +133,12 @@ async def root():
 from .api.routes.tasks import router as tasks_router
 from .api.routes.chat import router as chat_router
 from .api.routes.preferences import router as preferences_router
+from .api.routes.simple_chat import router as simple_chat_router
 
 app.include_router(tasks_router)
 app.include_router(chat_router)
 app.include_router(preferences_router)
+app.include_router(simple_chat_router)
 
 
 if __name__ == "__main__":

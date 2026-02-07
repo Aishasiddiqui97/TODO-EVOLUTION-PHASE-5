@@ -43,12 +43,14 @@ spec:
           value: "local"
         - name: LOG_LEVEL
           value: "info"
-        - name: OPENAI_API_KEY
+        - name: OPENROUTER_API_KEY
           valueFrom:
             secretKeyRef:
               name: app-secrets
-              key: openai-api-key
+              key: openrouter-api-key
               optional: true
+        - name: OPENROUTER_MODEL
+          value: "openai/gpt-4-turbo-preview"
         resources:
           requests:
             memory: "256Mi"

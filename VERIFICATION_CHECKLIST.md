@@ -9,12 +9,12 @@ Use this checklist to verify the Phase V MVP implementation is complete and work
 - [ ] kubectl CLI installed
 - [ ] Minikube installed (for Kubernetes deployment)
 - [ ] Dapr CLI installed
-- [ ] OpenAI API key obtained
+- [ ] OpenRouter API key obtained from https://openrouter.ai/keys
 - [ ] Git Bash or WSL installed (Windows users)
 
 ### Configuration
 - [ ] `backend/.env` file created from `.env.example`
-- [ ] `OPENAI_API_KEY` set in `.env` file
+- [ ] `OPENROUTER_API_KEY` set in `.env` file
 - [ ] All required ports available (8000, 5432, 9092, 3500, 50001)
 
 ## ✅ Code Verification
@@ -152,7 +152,7 @@ dapr init -k
 ### Secret Creation
 ```bash
 kubectl create secret generic app-secrets \
-  --from-literal=openai-api-key="your-key"
+  --from-literal=openrouter-api-key="your-key"
 ```
 - [ ] Secret created
 

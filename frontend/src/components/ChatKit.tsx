@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { MessageRenderer } from './MessageRenderer'
+import { WebSocketStatusBanner } from './WebSocketStatusBanner'
 import { getAccessToken, getUserInfo, isAuthenticated } from '@/lib/auth'
 import { getWebSocketClient, disconnectWebSocket, WebSocketMessage, ConnectionStatus } from '@/services/websocket'
 
@@ -32,6 +33,7 @@ export function ChatKit({ conversationId, onConversationChange }: ChatKitProps) 
   const [notifications, setNotifications] = useState<string[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const wsClientRef = useRef<ReturnType<typeof getWebSocketClient> | null>(null)
+  const isMountedRef = useRef(false)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -41,8 +43,29 @@ export function ChatKit({ conversationId, onConversationChange }: ChatKitProps) 
     scrollToBottom()
   }, [messages])
 
+  // Track mounted state
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
   // Initialize WebSocket connection
   useEffect(() => {
+    // Check if WebSocket is disabled (for simple mode)
+    const wsDisabled = process.env.NEXT_PUBLIC_DISABLE_WEBSOCKET === 'true'
+
+    if (wsDisabled) {
+      console.log('WebSocket disabled in simple mode')
+      setWsStatus({
+        connected: false,
+        currentSequence: 0,
+        reconnecting: false
+      })
+      return
+    }
+
     // Get user ID (using temp user for now)
     const userId = 'user-001' // TODO: Get from auth context
 
@@ -54,13 +77,16 @@ export function ChatKit({ conversationId, onConversationChange }: ChatKitProps) 
     const handleStatusChange = (status: ConnectionStatus) => {
       setWsStatus(status)
 
-      if (status.connected && !status.reconnecting) {
-        addNotification('✅ Connected to real-time sync')
-      } else if (status.reconnecting) {
-        addNotification('🔄 Reconnecting...')
-      } else if (status.error) {
-        addNotification(`❌ Connection error: ${status.error}`)
-      }
+      // Use setTimeout to defer state updates until after mount
+      setTimeout(() => {
+        if (status.connected && !status.reconnecting) {
+          addNotification('✅ Connected to real-time sync')
+        } else if (status.reconnecting) {
+          addNotification('🔄 Reconnecting...')
+        } else if (status.error) {
+          addNotification(`❌ Connection error: ${status.error}`)
+        }
+      }, 0)
     }
 
     wsClient.onStatusChange(handleStatusChange)
@@ -68,27 +94,37 @@ export function ChatKit({ conversationId, onConversationChange }: ChatKitProps) 
     // Register message handlers
     const handleTaskCreated = (message: WebSocketMessage) => {
       const task = message.data
-      addNotification(`✨ New task created: ${task?.title || 'Untitled'}`)
+      setTimeout(() => {
+        addNotification(`✨ New task created: ${task?.title || 'Untitled'}`)
+      }, 0)
     }
 
     const handleTaskUpdated = (message: WebSocketMessage) => {
       const task = message.data
-      addNotification(`📝 Task updated: ${task?.title || 'Untitled'}`)
+      setTimeout(() => {
+        addNotification(`📝 Task updated: ${task?.title || 'Untitled'}`)
+      }, 0)
     }
 
     const handleTaskCompleted = (message: WebSocketMessage) => {
       const task = message.data
-      addNotification(`✅ Task completed: ${task?.title || 'Untitled'}`)
+      setTimeout(() => {
+        addNotification(`✅ Task completed: ${task?.title || 'Untitled'}`)
+      }, 0)
     }
 
     const handleTaskDeleted = (message: WebSocketMessage) => {
       const taskId = message.taskId
-      addNotification(`🗑️ Task deleted`)
+      setTimeout(() => {
+        addNotification(`🗑️ Task deleted`)
+      }, 0)
     }
 
     const handleSyncComplete = (message: WebSocketMessage) => {
       const data = message.data || {}
-      addNotification(`🔄 Sync complete: ${data.taskCount || 0} tasks`)
+      setTimeout(() => {
+        addNotification(`🔄 Sync complete: ${data.taskCount || 0} tasks`)
+      }, 0)
     }
 
     wsClient.on('task.created', handleTaskCreated)
@@ -102,22 +138,32 @@ export function ChatKit({ conversationId, onConversationChange }: ChatKitProps) 
 
     // Cleanup on unmount
     return () => {
-      wsClient.off('task.created', handleTaskCreated)
-      wsClient.off('task.updated', handleTaskUpdated)
-      wsClient.off('task.completed', handleTaskCompleted)
-      wsClient.off('task.deleted', handleTaskDeleted)
-      wsClient.off('sync.complete', handleSyncComplete)
-      wsClient.offStatusChange(handleStatusChange)
-      disconnectWebSocket()
+      if (wsClientRef.current) {
+        wsClient.off('task.created', handleTaskCreated)
+        wsClient.off('task.updated', handleTaskUpdated)
+        wsClient.off('task.completed', handleTaskCompleted)
+        wsClient.off('task.deleted', handleTaskDeleted)
+        wsClient.off('sync.complete', handleSyncComplete)
+        wsClient.offStatusChange(handleStatusChange)
+        disconnectWebSocket()
+      }
     }
   }, [])
 
   const addNotification = (message: string) => {
+    // Only update state if component is mounted
+    if (!isMountedRef.current) {
+      console.log('Skipping notification (component not mounted):', message)
+      return
+    }
+
     setNotifications(prev => [...prev, message])
 
     // Auto-dismiss after 5 seconds
     setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n !== message))
+      if (isMountedRef.current) {
+        setNotifications(prev => prev.filter(n => n !== message))
+      }
     }, 5000)
   }
 
@@ -223,6 +269,13 @@ export function ChatKit({ conversationId, onConversationChange }: ChatKitProps) 
       height: '100vh',
       background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #0a0a0a 100%)'
     }}>
+      {/* WebSocket Status Banner */}
+      <WebSocketStatusBanner
+        connected={wsStatus.connected}
+        reconnecting={wsStatus.reconnecting}
+        error={wsStatus.error}
+      />
+
       {/* Header */}
       <div style={{
         padding: '20px',

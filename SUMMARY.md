@@ -185,7 +185,7 @@ result = await mcp_server.execute_tool(
 ```bash
 # Setup
 cp backend/.env.example backend/.env
-# Edit .env and add OPENAI_API_KEY
+# Edit .env and add OPENROUTER_API_KEY
 
 # Deploy
 docker-compose up -d
