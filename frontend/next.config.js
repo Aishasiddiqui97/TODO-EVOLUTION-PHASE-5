@@ -10,7 +10,7 @@ const nextConfig = {
   // Use webpack mode to avoid Turbopack WebSocket issues
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
-      // Use polling instead of WebSocket for file watching
+      // Use polling instead of WebSocket for file watching in some environments
       config.watchOptions = {
         poll: 1000,
         aggregateTimeout: 300,
